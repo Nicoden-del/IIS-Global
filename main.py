@@ -1,14 +1,18 @@
 import feedparser
-import google.generativeai as genai
+from google import genai
 import os
 from datetime import datetime
 
-# 配置 Gemini API
+# 配置 Gemini API（使用 v1 稳定版本，不使用过时的 v1beta）
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if not GEMINI_API_KEY:
     raise ValueError("请设置 GEMINI_API_KEY 环境变量")
 
-genai.configure(api_key=GEMINI_API_KEY)
+# 使用 v1 API，模型使用当前稳定的 gemini-2.5-flash
+_client = genai.Client(
+    api_key=GEMINI_API_KEY,
+    http_options={"api_version": "v1"},
+)
 
 # Google News RSS 源（中文新闻）
 GOOGLE_NEWS_RSS = "https://news.google.com/rss?hl=zh-CN&gl=CN&ceid=CN:zh-Hans"
@@ -29,7 +33,7 @@ def fetch_news():
     return news_items
 
 def summarize_with_gemini(news_items):
-    """使用 Gemini 1.5 Flash 总结新闻"""
+    """使用 Gemini 总结新闻（v1 API + gemini-2.5-flash）"""
     print("正在使用 Gemini 总结新闻...")
     
     # 构建提示词
@@ -40,10 +44,11 @@ def summarize_with_gemini(news_items):
 
 请提供一个简洁的总结（3-5句话）。"""
     
-    # 调用 Gemini
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content(prompt)
-    
+    # 调用 Gemini（v1 稳定版，模型：gemini-2.5-flash）
+    response = _client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
     return response.text
 
 def generate_html(news_items, summary):
@@ -200,7 +205,7 @@ def generate_html(news_items, summary):
         </div>
         
         <footer>
-            <p>由 Gemini 1.5 Flash 自动生成 | 数据来源：Google News</p>
+            <p>由 Gemini 自动生成 | 数据来源：Google News</p>
         </footer>
     </div>
 </body>
