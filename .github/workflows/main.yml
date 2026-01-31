@@ -1,0 +1,26 @@
+name: IIS-AutoRun
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Run
+        run: |
+          pip install google-generativeai feedparser
+          python main.py
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Push
+        run: |
+          git config --global user.name "bot"
+          git config --global user.email "bot@iis.com"
+          git add index.html
+          git commit -m "update" || exit 0
+          git push
